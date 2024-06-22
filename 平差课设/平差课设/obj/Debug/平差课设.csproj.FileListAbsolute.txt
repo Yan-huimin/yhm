@@ -1,0 +1,12 @@
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\bin\Debug\平差课设.exe.config
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\bin\Debug\平差课设.exe
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\bin\Debug\平差课设.pdb
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\obj\Debug\平差课设.Form1.resources
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\obj\Debug\平差课设.Properties.Resources.resources
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\obj\Debug\平差课设.csproj.GenerateResource.Cache
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\obj\Debug\平差课设.exe
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\obj\Debug\平差课设.pdb
+C:\Users\Administrator\Desktop\项目\平差课设\平差课设\obj\Debug\平差课设.csprojResolveAssemblyReference.cache
+C:\Users\Administrator\Desktop\新建文件夹\平差课设_水准网\平差课设\平差课设\bin\Debug\平差课设.exe.config
+C:\Users\Administrator\Desktop\新建文件夹\平差课设_水准网\平差课设\平差课设\obj\Debug\平差课设.exe
+C:\Users\Administrator\Desktop\新建文件夹\平差课设_水准网\平差课设\平差课设\obj\Debug\平差课设.pdb
