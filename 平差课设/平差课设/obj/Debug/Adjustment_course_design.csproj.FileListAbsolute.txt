@@ -22,12 +22,10 @@ C:\Users\Administrator\Desktop\新建文件夹\平差课设_水准网\平差课�
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\bin\Debug\Adjustment_course_design.exe.config
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\bin\Debug\Adjustment_course_design.exe
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\bin\Debug\Adjustment_course_design.pdb
-C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\bin\Debug\My-data.pdb
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\Adjustment_course_design.csproj.AssemblyReference.cache
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\平差课设.Form1.resources
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\Adjustment_course_design.Properties.Resources.resources
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\Adjustment_course_design.csproj.GenerateResource.cache
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\Adjustment_course_design.csproj.CoreCompileInputs.cache
-C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\Adjustme.617E9F5C.Up2Date
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\Adjustment_course_design.exe
 C:\Users\22344\Desktop\平差课设\平差课设_水准网\平差课设_水准网\平差课设_水准网\平差课设\平差课设\obj\Debug\Adjustment_course_design.pdb

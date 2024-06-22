@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Adjustment_course_design;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,6 +16,10 @@ namespace 平差课设
         static void Main()
         {
             Application.EnableVisualStyles();
+
+            //动态加载dll文件
+            LoadDll.LoadResourceDll();
+
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
         }
