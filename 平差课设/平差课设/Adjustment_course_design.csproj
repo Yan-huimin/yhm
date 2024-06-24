@@ -96,7 +96,6 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="Data\B.txt" />
     <EmbeddedResource Include="Data\data.txt" />

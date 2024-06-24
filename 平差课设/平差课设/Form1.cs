@@ -31,6 +31,7 @@ namespace 平差课设
         private Matrixs X = new Matrixs();
         private Matrixs P = new Matrixs();
         private Matrixs V = new Matrixs();
+        private Matrixs Fi = new Matrixs();
         private Matrixs Qxx = new Matrixs();
         private Matrixs Qvv = new Matrixs();
         private Matrixs Nbb_1 = new Matrixs();
@@ -215,9 +216,9 @@ namespace 平差课设
             Cal_All();
 
             richTextBox2.AppendText("运算结果为：\n");
-            richTextBox2.AppendText("H3的高程为：" + X.Matrix[0][0].ToString() + "\n");
-            richTextBox2.AppendText("H4的高程为：" + X.Matrix[1][0].ToString() + "\n");
-            richTextBox2.AppendText("H5的高程为：" + X.Matrix[2][0].ToString() + "\n");
+            richTextBox2.AppendText("H3的高程为：" + X.Matrix[0][0].ToString("0.000") + "m\n");
+            richTextBox2.AppendText("H4的高程为：" + X.Matrix[1][0].ToString("0.000") + "m\n");
+            richTextBox2.AppendText("H5的高程为：" + X.Matrix[2][0].ToString("0.000") + "m\n");
         }
 
         private void Cal_All()
@@ -645,21 +646,30 @@ namespace 平差课设
             Sigma_3 = res_1;
             Sigma_4 = res_2;
 
-            richTextBox2.AppendText("3号点的中误差为：" + res_1.ToString() + "\n");
-            richTextBox2.AppendText("4号点的中误差为：" + res_2.ToString() + "\n");
+            richTextBox2.AppendText("3号点的中误差为：" + (res_1 * 1000).ToString("0.00") + "mm\n");
+            richTextBox2.AppendText("4号点的中误差为：" + (res_2 * 1000).ToString("0.00") + "mm\n");
         }
 
         private void Cal_High_Difference_Of_3to_4()
         {
             double res = 0;
-            var a = Cal_Mul(Cal_Mul(B, Nbb_1), Cal_Transpose(B));
-            Qvv = Cal_Sub(Q, a);
+            Fi.Col = 1; Fi.Row = 3;
+            List<double> a = new List<double>();
+            List<double> b = new List<double>();
+            List<double> c = new List<double>();
+            a.Add(-1);
+            b.Add(1);
+            c.Add(0);
+            Fi.Matrix.Add(a);
+            Fi.Matrix.Add(b);
+            Fi.Matrix.Add(c);
 
-            res = Sigma0 * Math.Sqrt(Qvv.Matrix[4][4]);
+            var temp = Cal_Mul(Cal_Mul(Cal_Transpose(Fi), Nbb_1), Fi);
+            res = temp.Matrix[0][0];
 
-            Sigma_3To4 = res;
+            Sigma_3To4 = Math.Sqrt(res) * Sigma0;
 
-            richTextBox2.AppendText("3-4高差的中误差为：" + res.ToString() + "\n");
+            richTextBox2.AppendText("3-4高差的中误差为：" + (Sigma_3To4 * 1000).ToString("0.00") + "mm\n");
         }
 
         private void button7_Click(object sender, EventArgs e)
@@ -673,7 +683,7 @@ namespace 平差课设
             rt.AppendText("##################################################计算报告##################################################\n");
             rt.AppendText("\nn = " + n.ToString() + "\n" + "t = " + t.ToString() + "\n" + "r = " + r.ToString() + "\n");
             rt.AppendText("\n*************************************使用公式*************************************\n");
-            rt.AppendText("r = n - t;\nBX - l = V;\nW = Transport(B)Pl;\nNbb = Transpose(B)PB;\nQxx = Nbb^-1;\nQvv = Q - BNbb^-1Transport(B);\n");
+            rt.AppendText("r = n - t;\nBX - l = V;\nW = Transport(B)Pl;\nNbb = Transpose(B)PB;\nQxx = Nbb^-1;\nφ = -1*X1 + 1*X2 + 0*X3\nQfifi = Transpose(Fi)QxxFi");
             rt.AppendText("\n*************************************计算结果*************************************\n");
             rt.AppendText("X\n");
             Print_1(X);
@@ -686,21 +696,22 @@ namespace 平差课设
             Print_1(l);
             rt.AppendText("W\n");
             Print_1(W);
+            rt.AppendText("l\n");
             Print_1(l);
+            rt.AppendText("Fi\n");
+            Print_1(Fi);
             rt.AppendText("Nbb^-1\n");
             Print_1(Nbb_1);
             rt.AppendText("Q\n");
             Print_1(Q);
             rt.AppendText("Qxx\n");
             Print_1(Qxx);
-            rt.AppendText("Qvv\n");
-            Print_1(Qvv);
             rt.AppendText("\n*************************************精度评定*************************************\n");
-            rt.AppendText("Sigma0 = " + Sigma0.ToString("0.000") + "\n");
-            rt.AppendText("3号点的中误差为：\n" + Sigma_3.ToString("0.000") + "\n");
-            rt.AppendText("4号点的中误差为：\n" + Sigma_4.ToString("0.000") + "\n");
-            rt.AppendText("3号点-->4号点的高差中误差为：" + Sigma_3To4.ToString("0.000") + "\n");
-            rt.AppendText("（计算结果保留三位小数）\n");
+            rt.AppendText("Sigma0 = " + (Sigma0 * 1000).ToString("0.00") + "mm\n");
+            rt.AppendText("3号点的中误差为：\n" + (Sigma_3 * 1000).ToString("0.00") + "mm\n");
+            rt.AppendText("4号点的中误差为：\n" + (Sigma_4 * 1000).ToString("0.00") + "mm\n");
+            rt.AppendText("3号点-->4号点的高差中误差为：" + (Sigma_3To4 * 1000).ToString("0.00") + "mm\n");
+            rt.AppendText("（计算结果保留两位小数）\n");
         }
 
         private void Print_1(Matrixs a)
@@ -718,6 +729,11 @@ namespace 平差课设
         private void Form1_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("先点击左侧的File或者OpenFile按键\n随后自顶向下依次点击左侧按键。\n", "Help", MessageBoxButtons.OK);
         }
     }
 }
