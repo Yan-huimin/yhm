@@ -10,6 +10,8 @@ using System.Windows.Forms;
 using System.IO;
 using System.Reflection;
 using Adjustment_course_design;
+using System.Net.Http.Headers;
+using System.Runtime.InteropServices;
 
 namespace 平差课设
 {
@@ -35,14 +37,21 @@ namespace 平差课设
         private Matrixs Qxx = new Matrixs();
         private Matrixs Qvv = new Matrixs();
         private Matrixs Nbb_1 = new Matrixs();
-        private double H1;
-        private double H2;
+        private bool []st = new bool [1000];
+        private double[] High = new double[1000];
+        private bool[,] st_line = new bool[1000, 1000];
+        private string[] Name_Points = new string[1000];
+        private int Unknown_Points;
+        private int []index_of_Unknown_Points = new int[1000];
+        private int Cnt_Points;
+        private List<Site> Sites = new List<Site> ();
 
         public Form1()
         {
             InitializeComponent();
-            n = 7;  t = 3;  r = n - t;
+            this.Text = "水准网简介平差计算";
             Init_tab();
+            st_label.Text = "等待操作...";
         }
 
         private void 退出ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -57,7 +66,11 @@ namespace 平差课设
 
         private void button1_Click(object sender, EventArgs e)
         {
+            tabControl1.SelectedTab = tabPage1;
+
             Open_Picture();
+
+            st_label.Text = "图像导入成功";
         }
 
         private void Open_Picture()
@@ -78,57 +91,181 @@ namespace 平差课设
 
         private void 导入文件ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Input_Data();
-        }
-
-        private void Input_Data()
-        {
+            tabControl1.SelectedTab = tabPage1;
             try
             {
+                using (OpenFileDialog file = new OpenFileDialog())
+                {
+                    file.Filter = "文本文件(*.txt)|*.txt";
+                    file.Title = "文件";
 
-                Show_data();
-
-                Draw_Grid();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-
-        private void Show_data()
-        {
-            try
-            {
-                data.Class1 c = new data.Class1();
-
-                string path = c.Get_resource_name();
-
-                var s = path.Trim().Split('\n');
-
-                    for(int i = 1; i<s.Count() - 1; i++)
+                    DialogResult re = file.ShowDialog();
+                    if (re == DialogResult.OK)
                     {
-                        var r = s[i].Split(',');
-                        Points cur = new Points();
+                        using (StreamReader sr = new StreamReader(file.FileName))
+                        {
+                            var s = sr.ReadToEnd().Trim().Split('\n');
 
-                        cur.ID = r[0];
-                        cur.S = double.Parse(r[1]);
-                        cur.H_dif = double.Parse(r[2]);
-                        cur.sepoint = r[3];
+                            //读取n, t, r, 总点数数值
+                            var cur = s[1].Split(',');
+                            n = int.Parse(cur[0]);
+                            t = int.Parse(cur[1]);
+                            r = int.Parse(cur[2]);  
+                            Cnt_Points = int.Parse(cur[3]);
 
-                        Section.Add(cur);
+                            //初始化每个点的状态为False
+
+                            //读取已知点的点号和高程
+                            var ss = s[2].Split(';');
+                            for (int i = 0; i < ss.Length; i++)
+                            {
+                                var r = ss[i].Split(',');
+                                st[int.Parse(r[0])] = true;
+                                Name_Points[int.Parse(r[0])] = "H" + r[0];
+                                High[int.Parse(r[0])] = double.Parse(r[1]);
+                            }
+
+                            int cnt = 1;//未知量计数器
+                            for (int i = 1; i<= Cnt_Points; i++)
+                            {
+                                if (st[i] == true) continue;
+                                Name_Points[i] = "X" + cnt.ToString();
+                                Unknown_Points++;
+                                index_of_Unknown_Points[i] = cnt++;
+                            }
+
+                            //读取每一条边的数据
+                            for (int i = 3; i < s.Length; i++)
+                            {
+                                Get_All_data(s[i]);
+                            }
+
+                            Draw_Grid();
+                        }
                     }
-                    var ss = s[s.Count() - 1].Split(',');
-                    H1 = double.Parse(ss[0]);
-                    H2 = double.Parse(ss[1]);
-
+                }
+                st_label.Text = "文件读取成功...";
             }
             catch (Exception ex)
             {
-                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK);
             }
         }
+
+        //处理每一条边并更新每一条边的状态
+        private void Get_All_data(string s_1)
+        {
+            var s = s_1.Split(',');
+
+            var ss = s[0].Split('-');
+            Site r = new Site();
+            int P1 = int.Parse(ss[0]);  int P2 = int.Parse(ss[1]);//起点与终点的ID
+            r.begin = P1;   r.end = P2;//每一条边的起点与终点
+            st_line[P1, P2] = false;//将这条边的状态更新为false
+            r.Length = double.Parse(s[2]);//测站路线长度，用于计算权阵
+            r.site = s[0];//测站号
+            r.ID = s[3];//序号
+            r.Dif_H = double.Parse(s[1]);//高差
+            Sites.Add(r);//将测站加入集合进行后续观测方程的列立
+        }
+
+
+        //列立观测方程以及误差方程
+        private void Do_equ()
+        {
+            test_Box.AppendText("---------------------------设未知数----------------------------\n");
+            //设置未知变量X1, X2....
+            for (int i = 1; i <= Cnt_Points; i++)
+            {
+                if (st[i] == true) continue;
+                richTextBox1.AppendText(i.ToString() + "号点设为：" + Name_Points[i] + "\n");
+            }
+
+            //观测方程
+            richTextBox1.AppendText("----------------------------观测值方程---------------------------\n");
+            int cnt = 1;//Equ计数器
+            foreach (var p in Sites)
+            {
+                //通式,按读取数据的序号进行列立方程
+                //Li + Vi = P_ed - P_st
+                int P1 = p.begin; int P2 = p.end;
+                richTextBox1.AppendText($"{"L" + cnt.ToString(),-5} + {"V" + cnt++.ToString(),-5} = {Name_Points[P2], -5} - {Name_Points[P1], -5}\n");
+            }
+        }
+
+
+        //列立误差方程
+        private void Do_wc()
+        {
+            richTextBox1.AppendText("-------------------------------误差方程----------------------------------\n");
+            int cnt = 1;//Equ计数器
+            foreach (var p in Sites)
+            {
+                //通式,按读取数据的序号进行列立方程
+                //Li + Vi = P_ed - P_st
+                int P1 = p.begin; int P2 = p.end;
+                richTextBox1.AppendText($"{"V" + cnt.ToString(),-5} = {Name_Points[P2],-5} - {Name_Points[P1],-5}{((p.Dif_H > 0) ? " + " + p.Dif_H.ToString() + "( L" + cnt++.ToString() + ")" : " - " + Math.Abs(p.Dif_H).ToString() + "( L" + cnt++.ToString() + ")")}\n");
+            }
+        }
+
+        //列立法方程并初始化B矩阵，l矩阵，权阵
+        private void Do_Nor_equ()
+        {
+            //对B, l, P矩阵进行最初初始化(内部值全为零)
+            B.Row = n;  B.Col = Unknown_Points;
+            Init_Ori_Matrix(ref B);
+            l.Row = n; l.Col = 1;//l的列数一定为零
+            Init_Ori_Matrix(ref l);
+            P.Col = n;  P.Row = n;
+            Init_Ori_Matrix(ref P);
+            Q.Col = n; Q.Row = n;
+            Init_Ori_Matrix(ref Q);
+
+            //进行B,l矩阵的初始化
+            int cnt = 0;//计数器
+            foreach (var p in Sites)
+            {
+                double sum = p.Dif_H;
+                List<double> cur = new List<double>();
+                int P1 = p.begin; int P2 = p.end;
+
+                //处理l矩阵
+                if (st[P1]) sum += High[P1];
+                if (st[P2]) sum -= High[P2];
+                l.Matrix[cnt][0] = sum;
+
+                //处理P矩阵
+                P.Matrix[cnt][cnt] = p.Length;
+                Q.Matrix[cnt][cnt] = 1.0 / p.Length;
+
+                //处理B矩阵
+                for (int i = 1; i <= Cnt_Points; i++)
+                {
+                    if (st[i]) continue;
+                    int temp = index_of_Unknown_Points[i];
+                    if (i == P1) B.Matrix[cnt][temp - 1] = -1;
+                    else if (i == P2) B.Matrix[cnt][temp - 1] = 1;
+                }
+                cnt++;
+            }
+
+            //var cur_1 = P;
+            //Q = Cal_Inverse(cur_1);
+
+            //输出B矩阵
+            richTextBox1.AppendText("B\n");
+            Print(B);
+            //输出l矩阵
+            richTextBox1.AppendText("l\n");
+            Print(l);
+            //输出Q矩阵
+            richTextBox1.AppendText("Q\n");
+            Print(P);
+            //输出P矩阵
+            richTextBox1.AppendText("P\n");
+            Print(Q);
+        }
+
 
 
         private void Draw_Grid()
@@ -141,13 +278,15 @@ namespace 平差课设
             dataGridView1.Columns.Add("高程观测值", "高程观测值");
             dataGridView1.Columns.Add("端点号", "端点号");
 
-            foreach (var p in Section) dataGridView1.Rows.Add(p.ID, p.S, p.H_dif, p.sepoint);
-            dataGridView1.Rows.Add("H1 == ", H1, "H2 == ", H2);
+            dataGridView1.Rows.Add("n = ", n, "t = ", t);
+
+            foreach (var p in Sites)
+                dataGridView1.Rows.Add(p.ID, p.Length, p.Dif_H, p.site);
         }
 
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
-            Input_Data();
+
         }
 
         private void Init_tab()
@@ -160,232 +299,76 @@ namespace 平差课设
 
         private void button2_Click(object sender, EventArgs e)
         {
-            try
-            {
-                My_data.Class1 c = new My_data.Class1();
-                    var s = c.Get_equa().Trim().Split('\n');
+            tabControl1.SelectedTab = tabPage2;
 
-                    richTextBox1.AppendText("-------------------------------观测值方程-----------------------------\n");
-                    for (int i = 8; i <= 14; i++) richTextBox1.AppendText(s[i] + "\n");
-                    tabControl1.SelectedTab = tabPage2;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            Do_equ();
+
+            st_label.Text = "观测值方程列立成功";
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            try
-            {
-                My_data.Class1 c = new My_data.Class1();
-                    var s = c.Get_equa().Trim().Split('\n');
+            tabControl1.SelectedTab = tabPage2;
 
-                    richTextBox1.AppendText("-------------------------------误差方程-----------------------------\n");
-                    for (int i = 17; i <= 23; i++) richTextBox1.AppendText(s[i] + "\n");
-                    tabControl1.SelectedTab = tabPage2;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            Do_wc();
+
+            st_label.Text = "误差方程列立成功";
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            try
-            {
-                My_data.Class1 c = new My_data.Class1();
-                    var s = c.Get_equa().Trim().Split('\n');
+            tabControl1.SelectedTab = tabPage2;
 
-                    richTextBox1.AppendText("-------------------------------法方程-----------------------------\n");
-                    for (int i = 26; i <= 35; i++) richTextBox1.AppendText(s[i] + "\n");
-                    tabControl1.SelectedTab = tabPage2;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            richTextBox1.AppendText("----------------------------------法方程------------------------------------\n");
+            richTextBox1.AppendText("BX - l = 0\n");
+
+            Do_Nor_equ();
+
+            st_label.Text = "法方程列立成功";
         }
 
         private void button5_Click(object sender, EventArgs e)
         {
             tabControl1.SelectedTab = tabPage3;
 
-            Cal_All();
-
-            richTextBox2.AppendText("运算结果为：\n");
-            richTextBox2.AppendText("H3的高程为：" + X.Matrix[0][0].ToString("0.000") + "m\n");
-            richTextBox2.AppendText("H4的高程为：" + X.Matrix[1][0].ToString("0.000") + "m\n");
-            richTextBox2.AppendText("H5的高程为：" + X.Matrix[2][0].ToString("0.000") + "m\n");
-        }
-
-        private void Cal_All()
-        {
-            Get_B();
-            Get_l();
-            Get_Q();
-            Get_P();
-            Nbb_1 = Cal_Nbb_1();
-            W = Cal_W();
-
+            Nbb_1 = Cal_Inverse(Cal_Mul(Cal_Mul(Cal_Transpose(B), Q), B));
+            Qxx = Nbb_1;
+            W = Cal_Mul(Cal_Mul(Cal_Transpose(B), Q), l);
             X = Cal_Mul(Nbb_1, W);
 
-            richTextBox2.AppendText("X\n");
-            Print(X);
-
-            Cal_V();
-            Print(V);
-        }
-
-
-        private void Cal_V()
-        {
-            V.Row = Section.Count();
-            V.Col = X.Matrix[0].Count();
-            Init_Ori_Matrix(ref V);
-
-            richTextBox2.AppendText("V\n");
-            V.Matrix[0][0] = X.Matrix[0][0] - H1 - Section[0].H_dif;
-            V.Matrix[1][0] = X.Matrix[1][0] - H1 - Section[1].H_dif;
-            V.Matrix[2][0] = X.Matrix[0][0] - H2 - Section[2].H_dif;
-            V.Matrix[3][0] = X.Matrix[1][0] - H2 - Section[3].H_dif;
-            V.Matrix[4][0] = X.Matrix[1][0] - X.Matrix[0][0] - Section[4].H_dif;
-            V.Matrix[5][0] = X.Matrix[2][0] - X.Matrix[0][0] - Section[5].H_dif;
-            V.Matrix[6][0] = H2 - X.Matrix[2][0] - Section[6].H_dif;
-        }
-
-        private Matrixs Cal_Nbb_1()
-        {
-            Matrixs res = new Matrixs();
-            Init_Ori_Matrix(ref res);
-
-            //var cur_1 = Cal_Transpose(B);
-            ////Print(cur_1);
-            //var cur_2 = Cal_Mul(cur_1, P);
-            ////Print(cur_2);
-            //var cur_3 = Cal_Mul(cur_2, B);
-            ////Print(cur_3);
-
-            //Print(Cal_Inverse(cur_3));
-
-            res = Cal_Inverse(Cal_Mul(Cal_Mul(Cal_Transpose(B), P), B));
-            //Print(res);
-
-            return res;
-        }
-
-
-        private Matrixs Cal_W()
-        {
-            Matrixs res = new Matrixs();
-            Init_Ori_Matrix(ref res);
-
-            res = Cal_Mul(Cal_Transpose(B), Cal_Mul(P, l));
-
-            return res;
-        }
-
-        private void Get_Q()
-        {
-            Q.Col = Section.Count();    Q.Row = Section.Count();
-            for (int i = 0; i < Section.Count; i++)
+            for(int i = 0; i<Cnt_Points; i++)
             {
-                List<double> cur = new List<double>();
-                for (int j = 0; j < Section.Count; j++)
-                {
-                    if (i == j)
-                    {
-                        cur.Add(Section[i].S);
-                        continue;
-                    }
-                    cur.Add(0);
-                }
-                Q.Matrix.Add(cur);
+                if (st[i]) continue;
+                richTextBox2.AppendText("X" + (index_of_Unknown_Points[i]).ToString() + "(H" + i.ToString() + ")" + "高程为：" + (X.Matrix[index_of_Unknown_Points[i]][0] * 1000).ToString("0.000") + "m\n");
             }
+
+            st_label.Text = "数据计算完成...";
         }
 
 
-        private void Get_P()
-        {
-            P.Col = Section.Count(); P.Row = Section.Count();
-            for (int i = 0; i < Section.Count; i++)
-            {
-                List<double> cur = new List<double>();
-                for (int j = 0; j < Section.Count; j++)
-                {
-                    if (i == j)
-                    {
-                        cur.Add(1.0/Section[i].S);
-                        continue;
-                    }
-                    cur.Add(0);
-                }
-                P.Matrix.Add(cur);
-            }
-        }
-
-        private void Get_B()
-        {
-            try
-            {
-                My_data.Class1 c = new My_data.Class1();
-                var s = c.Get_B().Trim().Split('\n');
-                B.Row = s.Count();
-                B.Col = s[0].Split(',').Count();
-
-                for(int i = 0; i<s.Count(); i++)
-                {
-                    List<double> cur = new List<double>();
-                    var ss = s[i].Split(',');
-                    for (int j = 0; j < ss.Count(); j++)
-                        cur.Add(double.Parse(ss[j]));
-                    B.Matrix.Add(cur);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-
-        private void Get_l()
-        {
-            try
-            {
-                My_data.Class1 c = new My_data.Class1();
-                    var s = c.Get_l().Trim().Split('\n');
-                    l.Row = s.Count();
-                    l.Col = s[0].Split(',').Count();
-
-                    for (int i = 0; i < s.Count(); i++)
-                    {
-                        List<double> cur = new List<double>();
-                        cur.Add(double.Parse(s[i]));
-                        l.Matrix.Add(cur);
-                    }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("发生错误：" + ex.Message, "Tips", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-
+        /// <summary>
+        /// 这是一个输出矩阵的函数
+        /// </summary>
+        /// <param name="a">传入参数为Matrix类型</param>
+        /// <returns>返回值为一个Matrix</returns>
         private void Print(Matrixs a)
         {
-            richTextBox2.AppendText("------------------------Matrix------------------------\n");
+            richTextBox1.AppendText("------------------------Matrix------------------------\n");
             for(int i = 0; i<a.Row; i++)
             {
                 for (int j = 0; j < a.Col; j++)
-                    richTextBox2.AppendText($"{Math.Round(a.Matrix[i][j], 3),-10}");
-                richTextBox2.AppendText("\n");
+                    richTextBox1.AppendText($"{Math.Round(a.Matrix[i][j], 3),-10}");
+                richTextBox1.AppendText("\n");
             }
-            richTextBox2.AppendText("\n");
+            richTextBox1.AppendText("\n");
         }
 
+        /// <summary>
+        /// 这是一个计算矩阵加法的函数
+        /// </summary>
+        /// <param name="a">Left</param>
+        /// <param name="b">Right</param>
+        /// <returns>返回所传入的两个矩阵的和矩阵</returns>
         private Matrixs Cal_Add(Matrixs a, Matrixs b)
         {
             Matrixs res = new Matrixs();
@@ -404,10 +387,14 @@ namespace 平差课设
                     res.Matrix[i][j] = b.Matrix[i][j] + a.Matrix[i][j];
 
             return res;
-            //Print(res);
-            //MessageBox.Show("计算完成！", "Tips", MessageBoxButtons.OK);
         }
 
+        /// <summary>
+        /// 矩阵减法运算
+        /// </summary>
+        /// <param name="a">Left</param>
+        /// <param name="b">Right</param>
+        /// <returns>两个矩阵的减法操作后得到的结果</returns>
         private Matrixs Cal_Sub(Matrixs a, Matrixs b)
         {
             Matrixs res = new Matrixs();
@@ -426,11 +413,15 @@ namespace 平差课设
                     res.Matrix[i][j] = a.Matrix[i][j] - b.Matrix[i][j];
 
             return res;
-            //Print(res);
-            //MessageBox.Show("计算完成！", "Tips", MessageBoxButtons.OK);
         }
 
 
+        /// <summary>
+        /// 矩阵乘法操作
+        /// </summary>
+        /// <param name="a">Left</param>
+        /// <param name="b">Right</param>
+        /// <returns>a*b矩阵的结果(注意矩阵左右区别)</returns>
         private Matrixs Cal_Mul(Matrixs a, Matrixs b)
         {
             Matrixs res = new Matrixs();
@@ -455,7 +446,11 @@ namespace 平差课设
             return res;
         }
 
-
+        /// <summary>
+        /// 矩阵的转置计算函数
+        /// </summary>
+        /// <param name="a"></param>
+        /// <returns>传入矩阵的转置矩阵</returns>
         private Matrixs Cal_Transpose(Matrixs a)
         {
             Matrixs res = new Matrixs();
@@ -475,7 +470,11 @@ namespace 平差课设
             return res;
         }
 
-
+        /// <summary>
+        /// 逆矩阵运算函数
+        /// </summary>
+        /// <param name="a"></param>
+        /// <returns>传入参数的逆矩阵 (本函数采用高斯约旦消元法计算逆矩阵) </returns>
         private Matrixs Cal_Inverse(Matrixs a)
         {
             Matrixs res = new Matrixs();
@@ -549,7 +548,12 @@ namespace 平差课设
             return res;
         }
 
-
+        /// <summary>
+        /// 进行矩阵的初等行变换
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
         private void swap(ref Matrixs a, int x, int y)//进行初等行变换
         {
             for (int i = 0; i < a.Col; i++)
@@ -562,6 +566,10 @@ namespace 平差课设
         }
 
 
+        /// <summary>
+        /// 初始化传入的矩阵，内部全部初始化为0
+        /// </summary>
+        /// <param name="res"></param>
         private void Init_Ori_Matrix(ref Matrixs res)
         {
             for (int i = 0; i < res.Row; i++)
@@ -590,6 +598,8 @@ namespace 平差课设
                         Save_Calcate_Report(path);
                     }
                 }
+
+                st_label.Text = "文件保存成功...";
             }
             catch(Exception ex)
             {
@@ -597,6 +607,11 @@ namespace 平差课设
             }
         }
 
+
+        /// <summary>
+        /// 保存计算报告文件
+        /// </summary>
+        /// <param name="path"></param>
         private void Save_Calcate_Report(string path)
         {
             try
@@ -615,69 +630,86 @@ namespace 平差课设
         private void button6_Click(object sender, EventArgs e)
         {
             tabControl1.SelectedTab = tabPage3;
-            richTextBox2.AppendText("----------------------------精度评定-----------------------------\n");
 
-            Cal_Sigma0();
+            //初始化V矩阵
+            V.Col = 1;  V.Row = n;
+            Init_Ori_Matrix(ref V);
 
-            //三号点四号点中误差
-            Cal_F_T();
+            int cnt = 0;
+            foreach(var p in Sites)
+            {
+                int P1 = p.begin;   int P2 = p.end;
+                double res = 0;
+                if (st[P1]) 
+                    res -= High[P1];
+                else
+                {
+                    double value = X.Matrix[index_of_Unknown_Points[P1] - 1][0];
+                    res -= value;
+                }
+                if (st[P2]) 
+                    res += High[P2];
+                else
+                {
+                    double value = X.Matrix[index_of_Unknown_Points[P2] - 1][0];
+                    res += value;
+                }
+                res -= p.Dif_H;
+                V.Matrix[cnt++][0] = res;
+            }
+            richTextBox2.AppendText("\n*************************************精度评定*************************************\n");
 
-            //3-4高差中误差
-            Cal_High_Difference_Of_3to_4();
-        }
-
-
-        private void Cal_Sigma0()
-        {
-            var cur = Cal_Mul(Cal_Mul(Cal_Transpose(V), P), V);
+            var cur = Cal_Mul(Cal_Mul(Cal_Transpose(V), Q), V);
             double temp = cur.Matrix[0][0];
             Sigma0 = Math.Sqrt(temp / r);
-        }
+            richTextBox2.AppendText("Sigma0 = " + (Sigma0*1000).ToString("0.000") + "mm\n");
 
-        private void Cal_F_T()
-        {
-            double res_1 = 0;
-            double res_2 = 0;
-            Qxx = Nbb_1;
+            //未知点精度评定
+            for (int i = 1; i<=Cnt_Points; i++)
+            {
+                if (st[i]) continue;
+                int index = index_of_Unknown_Points[i];
+                double res = 0;
+                res = Sigma0 * Math.Sqrt(Qxx.Matrix[index - 1][index - 1]);
+                richTextBox2.AppendText(i.ToString() + "号点精度为：" + (res*1000).ToString("0.000") + "mm\n");
+            }
 
-            res_1 = Sigma0 * Math.Sqrt(Qxx.Matrix[0][0]);
-            res_2 = Sigma0 * Math.Sqrt(Qxx.Matrix[1][1]);
+            //测边精度评定
+            int rell = 1;//点号计数器
+            foreach(var p in Sites)
+            {
+                int P1 = p.begin;   int P2 = p.end;
+                Matrixs F = new Matrixs();
 
-            Sigma_3 = res_1;
-            Sigma_4 = res_2;
+                //初始化F矩阵
+                F.Col = 1;  F.Row = Unknown_Points;
+                Init_Ori_Matrix(ref F);
 
-            richTextBox2.AppendText("3号点的中误差为：" + (res_1 * 1000).ToString("0.00") + "mm\n");
-            richTextBox2.AppendText("4号点的中误差为：" + (res_2 * 1000).ToString("0.00") + "mm\n");
-        }
+                if (!st[P1]) F.Matrix[index_of_Unknown_Points[P1] - 1][0] = -1;//起点为-1
+                if (!st[P2]) F.Matrix[index_of_Unknown_Points[P2] - 1][0] = 1;//终点为1
 
-        private void Cal_High_Difference_Of_3to_4()
-        {
-            double res = 0;
-            Fi.Col = 1; Fi.Row = 3;
-            List<double> a = new List<double>();
-            List<double> b = new List<double>();
-            List<double> c = new List<double>();
-            a.Add(-1);
-            b.Add(1);
-            c.Add(0);
-            Fi.Matrix.Add(a);
-            Fi.Matrix.Add(b);
-            Fi.Matrix.Add(c);
+                double res = 0;
+                var temp_1 = Cal_Mul(Cal_Mul(Cal_Transpose(F), Qxx), F);
+                res = Math.Sqrt(temp_1.Matrix[0][0]) * Sigma0;
 
-            var temp = Cal_Mul(Cal_Mul(Cal_Transpose(Fi), Nbb_1), Fi);
-            res = temp.Matrix[0][0];
+                richTextBox2.AppendText(rell++.ToString() + "号测站的高差精度为：" + (res * 1000).ToString("0.000") + "mm\n");
+            }
+            richTextBox2.AppendText("精度评定结果均保留三位小数.\n");
 
-            Sigma_3To4 = Math.Sqrt(res) * Sigma0;
-
-            richTextBox2.AppendText("3-4高差的中误差为：" + (Sigma_3To4 * 1000).ToString("0.00") + "mm\n");
+            st_label.Text = "精度评定完成...";
         }
 
         private void button7_Click(object sender, EventArgs e)
         {
             tabControl1.SelectedTab = tabPage4;
             Generate_Report();
+
+            st_label.Text = "计算报告生成完成...";
         }
 
+        /// <summary>
+        /// 生成计算报告
+        /// </summary>
         private void Generate_Report()
         {
             rt.AppendText("##################################################计算报告##################################################\n");
@@ -696,24 +728,20 @@ namespace 平差课设
             Print_1(l);
             rt.AppendText("W\n");
             Print_1(W);
-            rt.AppendText("l\n");
-            Print_1(l);
-            rt.AppendText("Fi\n");
-            Print_1(Fi);
             rt.AppendText("Nbb^-1\n");
             Print_1(Nbb_1);
             rt.AppendText("Q\n");
-            Print_1(Q);
+            Print_1(P);
             rt.AppendText("Qxx\n");
             Print_1(Qxx);
-            rt.AppendText("\n*************************************精度评定*************************************\n");
-            rt.AppendText("Sigma0 = " + (Sigma0 * 1000).ToString("0.00") + "mm\n");
-            rt.AppendText("3号点的中误差为：\n" + (Sigma_3 * 1000).ToString("0.00") + "mm\n");
-            rt.AppendText("4号点的中误差为：\n" + (Sigma_4 * 1000).ToString("0.00") + "mm\n");
-            rt.AppendText("3号点-->4号点的高差中误差为：" + (Sigma_3To4 * 1000).ToString("0.00") + "mm\n");
-            rt.AppendText("（计算结果保留两位小数）\n");
+            rt.AppendText(richTextBox2.Text);
         }
 
+
+        /// <summary>
+        /// 打印矩阵
+        /// </summary>
+        /// <param name="a"></param>
         private void Print_1(Matrixs a)
         {
             rt.AppendText("\n------------------------Matrix------------------------\n");
@@ -734,6 +762,25 @@ namespace 平差课设
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             MessageBox.Show("先点击左侧的File或者OpenFile按键\n随后自顶向下依次点击左侧按键。\n", "Help", MessageBoxButtons.OK);
+        }
+
+        private void toolStripStatusLabel1_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void statusStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            
+        }
+
+        private void 计算ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void toolStripComboBox1_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
