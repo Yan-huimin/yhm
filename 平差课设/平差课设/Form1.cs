@@ -49,7 +49,7 @@ namespace 平差课设
         public Form1()
         {
             InitializeComponent();
-            this.Text = "水准网简介平差计算";
+            this.Text = "水准网间接平差计算";
             Init_tab();
             st_label.Text = "等待操作...";
         }
@@ -77,11 +77,24 @@ namespace 平差课设
         {
             try
             {
-                Pic.Class1 c = new Pic.Class1();
+                //Pic.Class1 c = new Pic.Class1();
 
-                pictureBox1.Image = c.Get_Pic();
+                //pictureBox1.Image = c.Get_Pic();
 
-                pictureBox1.SizeMode = PictureBoxSizeMode.CenterImage;
+                //pictureBox1.SizeMode = PictureBoxSizeMode.CenterImage;
+
+                using(OpenFileDialog file = new OpenFileDialog())
+                {
+                    file.Filter = "图片文件(*.png)|*.png|(*.jpg)|*.jpg";
+
+                    DialogResult re = file.ShowDialog();
+                    if (re == DialogResult.OK)
+                    {
+                        pictureBox1.Load(file.FileName);
+
+                        pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -173,7 +186,7 @@ namespace 平差课设
         //列立观测方程以及误差方程
         private void Do_equ()
         {
-            test_Box.AppendText("---------------------------设未知数----------------------------\n");
+            richTextBox1.AppendText("---------------------------设未知数----------------------------\n");
             //设置未知变量X1, X2....
             for (int i = 1; i <= Cnt_Points; i++)
             {
@@ -204,7 +217,7 @@ namespace 平差课设
                 //通式,按读取数据的序号进行列立方程
                 //Li + Vi = P_ed - P_st
                 int P1 = p.begin; int P2 = p.end;
-                richTextBox1.AppendText($"{"V" + cnt.ToString(),-5} = {Name_Points[P2],-5} - {Name_Points[P1],-5}{((p.Dif_H > 0) ? " + " + p.Dif_H.ToString() + "( L" + cnt++.ToString() + ")" : " - " + Math.Abs(p.Dif_H).ToString() + "( L" + cnt++.ToString() + ")")}\n");
+                richTextBox1.AppendText($"{"V" + cnt.ToString(),-5} = {Name_Points[P2],-5} - {Name_Points[P1],-5}{((p.Dif_H > 0) ? " - " + p.Dif_H.ToString() + "( L" + cnt++.ToString() + ")" : " + " + Math.Abs(p.Dif_H).ToString() + "( L" + cnt++.ToString() + ")")}\n");
             }
         }
 
@@ -336,10 +349,10 @@ namespace 平差课设
             W = Cal_Mul(Cal_Mul(Cal_Transpose(B), Q), l);
             X = Cal_Mul(Nbb_1, W);
 
-            for(int i = 0; i<Cnt_Points; i++)
+            for(int i = 1; i<=Cnt_Points; i++)
             {
                 if (st[i]) continue;
-                richTextBox2.AppendText("X" + (index_of_Unknown_Points[i]).ToString() + "(H" + i.ToString() + ")" + "高程为：" + (X.Matrix[index_of_Unknown_Points[i]][0] * 1000).ToString("0.000") + "m\n");
+                richTextBox2.AppendText("X" + index_of_Unknown_Points[i].ToString() + "(H" + i.ToString() + ")" + "高程为：" + X.Matrix[index_of_Unknown_Points[i] - 1][0].ToString("0.000") + "m\n");
             }
 
             st_label.Text = "数据计算完成...";
@@ -715,7 +728,7 @@ namespace 平差课设
             rt.AppendText("##################################################计算报告##################################################\n");
             rt.AppendText("\nn = " + n.ToString() + "\n" + "t = " + t.ToString() + "\n" + "r = " + r.ToString() + "\n");
             rt.AppendText("\n*************************************使用公式*************************************\n");
-            rt.AppendText("r = n - t;\nBX - l = V;\nW = Transport(B)Pl;\nNbb = Transpose(B)PB;\nQxx = Nbb^-1;\nφ = -1*X1 + 1*X2 + 0*X3\nQfifi = Transpose(Fi)QxxFi");
+            rt.AppendText("r = n - t;\nBX - l = V;\nW = Transport(B)Pl;\nNbb = Transpose(B)PB;\nQxx = Nbb^-1;\nQfifi = Transpose(Fi)QxxFi");
             rt.AppendText("\n*************************************计算结果*************************************\n");
             rt.AppendText("X\n");
             Print_1(X);

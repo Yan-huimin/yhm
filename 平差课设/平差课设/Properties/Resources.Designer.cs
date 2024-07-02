@@ -19,7 +19,7 @@ namespace Adjustment_course_design.Properties {
     // 类通过类似于 ResGen 或 Visual Studio 的工具自动生成的。
     // 若要添加或移除成员，请编辑 .ResX 文件，然后重新运行 ResGen
     // (以 /str 作为命令选项)，或重新生成 VS 项目。
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -47,8 +47,8 @@ namespace Adjustment_course_design.Properties {
         }
         
         /// <summary>
-        ///   重写当前线程的 CurrentUICulture 属性，对
-        ///   使用此强类型资源类的所有资源查找执行重写。
+        ///   重写当前线程的 CurrentUICulture 属性
+        ///   重写当前线程的 CurrentUICulture 属性。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
         internal static global::System.Globalization.CultureInfo Culture {
@@ -77,6 +77,8 @@ namespace Adjustment_course_design.Properties {
         
         /// <summary>
         ///   查找类似 序号,测段距离,高差观测值,端点号
+        ///7,3,4
+        ///1,5.016;2,6.016
         ///1,1.1,1.359,1-3
         ///2,1.7,2.009,1-4
         ///3,2.3,0.363,2-3
@@ -84,7 +86,7 @@ namespace Adjustment_course_design.Properties {
         ///5,2.4,0.657,3-4
         ///6,1.4,0.238,3-5
         ///7,2.6,-0.595,5-2
-        ///5.016,6.016 的本地化字符串。
+        /// 的本地化字符串。
         /// </summary>
         internal static string data {
             get {

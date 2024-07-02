@@ -48,8 +48,6 @@
             this.richTextBox2 = new System.Windows.Forms.RichTextBox();
             this.tabPage4 = new System.Windows.Forms.TabPage();
             this.rt = new System.Windows.Forms.RichTextBox();
-            this.tabPage5 = new System.Windows.Forms.TabPage();
-            this.test_Box = new System.Windows.Forms.RichTextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.button4 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
@@ -72,7 +70,6 @@
             this.tabPage2.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.tabPage4.SuspendLayout();
-            this.tabPage5.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -103,14 +100,14 @@
             // 导入文件ToolStripMenuItem
             // 
             this.导入文件ToolStripMenuItem.Name = "导入文件ToolStripMenuItem";
-            this.导入文件ToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.导入文件ToolStripMenuItem.Size = new System.Drawing.Size(161, 26);
             this.导入文件ToolStripMenuItem.Text = "Open File";
             this.导入文件ToolStripMenuItem.Click += new System.EventHandler(this.导入文件ToolStripMenuItem_Click);
             // 
             // 保存报告文件ToolStripMenuItem
             // 
             this.保存报告文件ToolStripMenuItem.Name = "保存报告文件ToolStripMenuItem";
-            this.保存报告文件ToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.保存报告文件ToolStripMenuItem.Size = new System.Drawing.Size(161, 26);
             this.保存报告文件ToolStripMenuItem.Text = "Save File";
             this.保存报告文件ToolStripMenuItem.Click += new System.EventHandler(this.保存报告文件ToolStripMenuItem_Click);
             // 
@@ -157,7 +154,6 @@
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Controls.Add(this.tabPage4);
-            this.tabControl1.Controls.Add(this.tabPage5);
             this.tabControl1.Location = new System.Drawing.Point(189, 68);
             this.tabControl1.Margin = new System.Windows.Forms.Padding(4);
             this.tabControl1.Name = "tabControl1";
@@ -306,24 +302,6 @@
             this.rt.Size = new System.Drawing.Size(1303, 539);
             this.rt.TabIndex = 0;
             this.rt.Text = "";
-            // 
-            // tabPage5
-            // 
-            this.tabPage5.Controls.Add(this.test_Box);
-            this.tabPage5.Location = new System.Drawing.Point(4, 25);
-            this.tabPage5.Name = "tabPage5";
-            this.tabPage5.Size = new System.Drawing.Size(1311, 537);
-            this.tabPage5.TabIndex = 4;
-            this.tabPage5.Text = "tabPage5";
-            this.tabPage5.UseVisualStyleBackColor = true;
-            // 
-            // test_Box
-            // 
-            this.test_Box.Location = new System.Drawing.Point(0, 0);
-            this.test_Box.Name = "test_Box";
-            this.test_Box.Size = new System.Drawing.Size(1311, 549);
-            this.test_Box.TabIndex = 0;
-            this.test_Box.Text = "";
             // 
             // groupBox1
             // 
@@ -480,7 +458,6 @@
             this.tabPage2.ResumeLayout(false);
             this.tabPage3.ResumeLayout(false);
             this.tabPage4.ResumeLayout(false);
-            this.tabPage5.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.statusStrip1.ResumeLayout(false);
@@ -521,8 +498,6 @@
         private System.Windows.Forms.Button button6;
         private System.Windows.Forms.RichTextBox rt;
         private System.Windows.Forms.Button button7;
-        private System.Windows.Forms.TabPage tabPage5;
-        private System.Windows.Forms.RichTextBox test_Box;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel st_label;
     }
